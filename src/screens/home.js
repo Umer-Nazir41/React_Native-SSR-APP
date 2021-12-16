@@ -3,6 +3,7 @@ import {Linking, Platform, StyleSheet, View, ScrollView} from 'react-native';
 import data from '../data';
 import axios from 'axios';
 import htmlToElement from '../utilities/htmlToElement/htmlToElement';
+import Header from '../components/header';
 
 const boldStyle = {fontWeight: 'bold'};
 const italicStyle = {fontStyle: 'italic'};
@@ -64,7 +65,7 @@ const Home = () => {
           root = root.split('<body>')[1];
           root = root.split('<script>')[0];
           root = root.split('<div class="navbar-fixed">')[1];
-          // root = root.split('<div class="container"><div><div class="row">')[0];
+          //root = root.split('<div class="container"><div><div class="row">')[0];
 
           root = htmlToElement(root, opts, (err, element) => {
             if (err) {
@@ -74,7 +75,7 @@ const Home = () => {
             setHtml(element);
           });
 
-          console.log(root);
+          //console.log(root);
         })
         .catch(function (error) {
           alert(error.message);
@@ -84,10 +85,11 @@ const Home = () => {
     getHTML();
   }, []);
 
-  console.log(html);
+  //console.log(html);
   //return <View>{data}</View>;
   return (
     <ScrollView>
+      <Header></Header>
       <View>{html}</View>
     </ScrollView>
   );

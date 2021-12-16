@@ -3,6 +3,7 @@ import {StyleSheet, Text, View} from 'react-native';
 import htmlparser from 'htmlparser2-without-node-native';
 import entities from 'entities';
 import AutoSizedImage from './autoResizeImage';
+import {store} from '../../store/store';
 
 const defaultOpts = {
   lineBreak: '\n',
@@ -37,7 +38,14 @@ const Img = props => {
   return <AutoSizedImage source={source} style={imgStyle} />;
 };
 
-export default function htmlToElement(rawHtml, customOpts = {}, done) {
+// const dispatch = useDispatch();
+// const aTags = store.getState().header.aTags;
+export let aTags = [];
+
+export default htmlToElement = (rawHtml, customOpts = {}, done) => {
+  //const aTags = useSelector(state => state.header.aTags);
+  //const dispatch = useDispatch();
+
   const opts = {
     ...defaultOpts,
     ...customOpts,
@@ -63,19 +71,23 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
       }
       const {TextComponent} = opts;
 
+      if (node.attribs !== undefined && node.attribs.class === 'nav-wrapper') {
+        ExtractATags(node);
+      }
+
       if (node.type === 'text') {
         // const defaultStyle = opts.textComponentProps
         //   ? opts.textComponentProps.style
         //   : null;
         // const customStyle = inheritedStyle(parent);
-        console.log(node.data);
+
         return (
           <TextComponent
             //{...opts.textComponentProps}
             key={index}
             //style={[defaultStyle, customStyle]}
           >
-            {node.data}
+            {node.data + '\n'}
             {/* {entities.decodeHTML(node.data)} */}
           </TextComponent>
         );
@@ -150,6 +162,8 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
 
         const {NodeComponent, styles} = opts;
 
+        //console.log(aTags);
+
         return (
           <NodeComponent
             {...opts.nodeComponentProps}
@@ -176,4 +190,43 @@ export default function htmlToElement(rawHtml, customOpts = {}, done) {
   const parser = new htmlparser.Parser(handler);
   parser.write(rawHtml);
   parser.done();
-}
+};
+
+const ExtractATags = node => {
+  //console.log(node);
+
+  if (node.children)
+    for (const child in node.children) {
+      ExtractATags(node.children[child]);
+    }
+
+  if (node.type === 'tag') {
+    if (node.name === 'a' && node.attribs && node.attribs.href) {
+      if (!aTags.some(value => value.link === node.attribs.href)) {
+        aTags.push({
+          name: node.children[0].data,
+          link: node.attribs.href,
+        });
+
+        // store.reducer.header.addNewItem({
+        //   name: node.children[0].data,
+        //   link: node.attribs.href,
+        // });
+      }
+    }
+  }
+};
+
+// console.log(node.children[0].name);
+//       if (!aTags.some(value => value.link === node.attribs.href)) {
+//         aTags.push({
+//           name: node.children[0].data,
+//           link: node.attribs.href,
+//         });
+// 				// dispatch(
+//         //   addNewItem({
+//         //     name: node.children[0].data,
+//         //     link: node.attribs.href,
+//         //   }),
+//         //);
+//}

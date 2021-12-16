@@ -13,6 +13,7 @@
     "@callstack/react-theme-provider": "^3.0.7",
     "@react-navigation/drawer": "^6.1.8",
     "@react-navigation/native": "^6.0.6",
+    "@reduxjs/toolkit": "^1.7.0",
     "axios": "^0.24.0",
     "entities": "^3.0.1",
     "fast-html-parser": "^1.0.1",
@@ -29,7 +30,9 @@
     "react-native-render-html": "^6.3.1",
     "react-native-safe-area-context": "^3.3.2",
     "react-native-screens": "^3.10.1",
+    "react-native-tcp-socket": "^5.5.0",
     "react-native-vector-icons": "^9.0.0",
+    "react-redux": "^7.2.6",
     "rn-dividers": "^2.0.2",
     "util": "^0.12.4",
     "write-json-file": "^5.0.0"

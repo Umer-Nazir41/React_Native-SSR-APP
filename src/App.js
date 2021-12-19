@@ -8,5 +8,9 @@ import {store} from './store/store';
 LogBox.ignoreAllLogs();
 
 export default function App() {
-  return <Home />;
+  return (
+    <Provider store={store}>
+      <Home />
+    </Provider>
+  );
 }

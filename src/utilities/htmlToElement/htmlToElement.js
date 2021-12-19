@@ -3,7 +3,6 @@ import {StyleSheet, Text, View} from 'react-native';
 import htmlparser from 'htmlparser2-without-node-native';
 import entities from 'entities';
 import AutoSizedImage from './autoResizeImage';
-import {store} from '../../store/store';
 
 const defaultOpts = {
   lineBreak: '\n',
@@ -38,14 +37,12 @@ const Img = props => {
   return <AutoSizedImage source={source} style={imgStyle} />;
 };
 
-// const dispatch = useDispatch();
-// const aTags = store.getState().header.aTags;
+//const dispatch = useDispatch();
+
 export let aTags = [];
+export let body;
 
 export default htmlToElement = (rawHtml, customOpts = {}, done) => {
-  //const aTags = useSelector(state => state.header.aTags);
-  //const dispatch = useDispatch();
-
   const opts = {
     ...defaultOpts,
     ...customOpts,
@@ -71,10 +68,6 @@ export default htmlToElement = (rawHtml, customOpts = {}, done) => {
       }
       const {TextComponent} = opts;
 
-      if (node.attribs !== undefined && node.attribs.class === 'nav-wrapper') {
-        ExtractATags(node);
-      }
-
       if (node.type === 'text') {
         // const defaultStyle = opts.textComponentProps
         //   ? opts.textComponentProps.style
@@ -97,7 +90,6 @@ export default htmlToElement = (rawHtml, customOpts = {}, done) => {
         if (node.name === 'img') {
           return <Img key={index} attribs={node.attribs} />;
         }
-
         let linkPressHandler = null;
         let linkLongPressHandler = null;
 
@@ -162,8 +154,6 @@ export default htmlToElement = (rawHtml, customOpts = {}, done) => {
 
         const {NodeComponent, styles} = opts;
 
-        //console.log(aTags);
-
         return (
           <NodeComponent
             {...opts.nodeComponentProps}
@@ -191,42 +181,3 @@ export default htmlToElement = (rawHtml, customOpts = {}, done) => {
   parser.write(rawHtml);
   parser.done();
 };
-
-const ExtractATags = node => {
-  //console.log(node);
-
-  if (node.children)
-    for (const child in node.children) {
-      ExtractATags(node.children[child]);
-    }
-
-  if (node.type === 'tag') {
-    if (node.name === 'a' && node.attribs && node.attribs.href) {
-      if (!aTags.some(value => value.link === node.attribs.href)) {
-        aTags.push({
-          name: node.children[0].data,
-          link: node.attribs.href,
-        });
-
-        // store.reducer.header.addNewItem({
-        //   name: node.children[0].data,
-        //   link: node.attribs.href,
-        // });
-      }
-    }
-  }
-};
-
-// console.log(node.children[0].name);
-//       if (!aTags.some(value => value.link === node.attribs.href)) {
-//         aTags.push({
-//           name: node.children[0].data,
-//           link: node.attribs.href,
-//         });
-// 				// dispatch(
-//         //   addNewItem({
-//         //     name: node.children[0].data,
-//         //     link: node.attribs.href,
-//         //   }),
-//         //);
-//}

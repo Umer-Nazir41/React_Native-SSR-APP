@@ -4,14 +4,23 @@ import {
   Platform,
   StyleSheet,
   View,
-  ScrollView,
   Text,
+  ScrollView,
+  SafeAreaView,
 } from 'react-native';
-//import data from '../data';
 import axios from 'axios';
-//import htmlToElement from '../utilities/htmlToElement/htmlToElement';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  addNewItem,
+  setHeaderTrue,
+  setBody,
+} from '../store/reducers/headerSlice';
 
+import htmlToElement from '../utilities/htmlToElement/htmlToElement';
+import Header from '../components/header';
 import htmlparser from 'htmlparser2-without-node-native';
+import MainView from './mainView';
+import entities from 'entities';
 
 const boldStyle = {fontWeight: 'bold'};
 const italicStyle = {fontStyle: 'italic'};
@@ -41,16 +50,6 @@ const baseStyles = StyleSheet.create({
   h6: {fontWeight: 'bold', fontSize: 12},
 });
 
-const opts = {
-  addLineBreaks: true,
-  linkHandler: url => Linking.openURL(url),
-  linkLongPressHandler: null,
-  styles: {...baseStyles},
-  onError: console.error.bind(console),
-  //customRenderer: renderNode,
-  RootComponent: element => <View {...element} />,
-};
-
 const Img = props => {
   const width =
     parseInt(props.attribs['width'], 10) ||
@@ -74,51 +73,71 @@ const Img = props => {
   return <AutoSizedImage source={source} style={imgStyle} />;
 };
 
+const defaultOpts = {
+  lineBreak: '\n',
+  paragraphBreak: '\n\n',
+  bullet: '\u2022 ',
+  TextComponent: Text,
+  textComponentProps: null,
+  NodeComponent: Text,
+  nodeComponentProps: null,
+};
+
+const opts = {
+  addLineBreaks: true,
+  linkHandler: url => Linking.openURL(url),
+  linkLongPressHandler: null,
+  styles: {...baseStyles},
+  onError: console.error.bind(console),
+  //customRenderer: renderNode,
+  RootComponent: element => <View {...element} />,
+};
+
 const BASE_URL = 'http://150.230.126.140:3000';
 
 const Home = () => {
   const [html, setHtml] = useState(<View></View>);
-  const [defaultPATH, setDefaultPath] = useState('/');
-  const [nodeType, setNodeType] = useState(Text);
+  const aTags = useSelector(state => state.header.aTags);
+  const defaultPath = useSelector(state => state.header.defaultPath);
+  const body = useSelector(state => state.header.body);
+  const isHeader = useSelector(state => state.header.isHeader);
+  const dispatch = useDispatch();
 
-  const defaultOpts = {
-    lineBreak: '\n',
-    paragraphBreak: '\n\n',
-    bullet: '\u2022 ',
-    TextComponent: Text,
-    textComponentProps: null,
-    NodeComponent: nodeType,
-    nodeComponentProps: null,
+  const getHTML = async () => {
+    await axios
+      .get(BASE_URL + defaultPath)
+      .then(function (response) {
+        var root = response.data;
+        root = root.split('<body>')[1];
+        root = root.split('<script>')[0];
+
+        //console.log('asd1');
+        // extractData(root, (err, res) => {
+        //   if (err) {
+        //     console.log(err);
+        //   } else {
+        //     console.log(res);
+        //   }
+        // });
+        console.log(root);
+        htmlToElement(root, opts, (err, element) => {
+          if (err) {
+            console.log(err);
+          }
+          //element = element[0];
+          console.log(element);
+          setHtml(element);
+        });
+      })
+      .catch(function (error) {
+        //console.log(error);
+        //alert(error);
+      });
   };
 
   useEffect(() => {
-    const getHTML = async () => {
-      const users = await axios
-        .get(BASE_URL + defaultPATH)
-        .then(function (response) {
-          var root = response.data;
-          root = root.split('<body>')[1];
-          root = root.split('<script>')[0];
-          root = root.split('<div class="navbar-fixed">')[1];
-          //root = root.split('<div class="container"><div><div class="row">')[0];
-
-          root = htmlToElement(root, opts, (err, element) => {
-            if (err) {
-              //console.log(err);
-            }
-            //element = element[0];
-            setHtml(element);
-          });
-
-          //console.log(root);
-        })
-        .catch(function (error) {
-          alert(error.message);
-        });
-    };
-
     getHTML();
-  }, [defaultPATH]);
+  }, []);
 
   const htmlToElement = (rawHtml, customOpts = {}, done) => {
     const opts = {
@@ -147,7 +166,6 @@ const Home = () => {
         const {TextComponent} = opts;
 
         if (node.type === 'text') {
-          console.log(node);
           // const defaultStyle = opts.textComponentProps
           //   ? opts.textComponentProps.style
           //   : null;
@@ -173,11 +191,16 @@ const Home = () => {
           let linkLongPressHandler = null;
 
           if (node.name === 'a' && node.attribs && node.attribs.href) {
-            linkPressHandler = () => {
-              //console.log(node.attribs.href);
-              setDefaultPath(node.attribs.href);
-              //console.log(defaultPATH);
-            };
+            linkPressHandler = () =>
+              opts.linkHandler(
+                'http://150.230.126.140:3000' + node.attribs.href,
+              );
+            if (opts.linkLongPressHandler) {
+              linkLongPressHandler = () =>
+                opts.linkLongPressHandler(
+                  entities.decodeHTML(node.attribs.href),
+                );
+            }
           }
 
           let linebreakBefore = null;
@@ -260,13 +283,104 @@ const Home = () => {
     parser.done();
   };
 
-  //console.log(html);
-  //return <View>{data}</View>;
+  console.log(aTags);
+  let titleName;
+  if (aTags.length > 0) {
+    for (const key in aTags) {
+      if (aTags[key].link === defaultPath) {
+        titleName = aTags[key].name;
+      }
+    }
+  }
+
+  //console.log(aTags);
   return (
-    <ScrollView>
-      <View>{html}</View>
+    <ScrollView style={{flex: 1}}>
+      <View>{}</View>
     </ScrollView>
   );
 };
 
 export default Home;
+
+const extractData = (rawHtml, done) => {
+  function domToElement(dom) {
+    if (!dom) return null;
+    dom.map(node => {
+      if (node.attribs !== undefined && node.attribs.class === 'nav-wrapper') {
+        ExtractATags(node);
+      }
+
+      if (node.name === 'nav') {
+        dispatch(setHeaderTrue());
+      }
+
+      if (
+        node.attribs !== undefined &&
+        node.attribs.class === 'container' &&
+        node.parent !== undefined &&
+        node.parent.name === 'div' &&
+        node.parent.attribs.class === undefined
+      ) {
+        //console.log(node);
+        dispatch(setBody(node));
+      }
+
+      domToElement(node.children, node);
+    });
+  }
+
+  const handler = new htmlparser.DomHandler(function (err, dom) {
+    if (err) done(err);
+    done(null, domToElement(dom));
+  });
+
+  const parser = new htmlparser.Parser(handler);
+  parser.write(rawHtml);
+  parser.done();
+};
+
+// const ExtractATags = node => {
+// 	if (node.children)
+// 		for (const child in node.children) {
+// 			ExtractATags(node.children[child]);
+// 		}
+
+// 	if (node.type === 'tag') {
+// 		if (node.name === 'a' && node.attribs && node.attribs.href) {
+// 			if (
+// 				aTags.some(value => {
+// 					value.link === node.attribs.href;
+// 				})
+// 			) {
+// 				let tag = {
+// 					name: node.children[0].data,
+// 					link: node.attribs.href,
+// 				};
+// 				dispatch(addNewItem(tag));
+// 			}
+
+// if (aTags.filter(item => item.link == node.attribs.href).length == 0) {
+//   console.log(node.attribs.href);
+//   let tag = {
+//     name: node.children[0].data,
+//     link: node.attribs.href,
+//   };
+//   dispatch(addNewItem(tag));
+// }
+
+// if (
+//   aTags.some(value => {
+//     value.link === node.attribs.href;
+//   })
+// ) {
+//   //console.log(obj.link);
+//   let tag = {
+//     name: node.children[0].data,
+//     link: node.attribs.href,
+//   };
+//   dispatch(addNewItem(tag));
+// }
+// 		}
+// 	}
+// };

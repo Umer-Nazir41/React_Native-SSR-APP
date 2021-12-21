@@ -1,33 +1,22 @@
 import React, {useState, useEffect} from 'react';
+import Drawer from "../navigation/Drawer"
 import {
   Linking,
   Platform,
   StyleSheet,
   View,
-  Text,
   ScrollView,
-  SafeAreaView,
+  Text,
 } from 'react-native';
 import axios from 'axios';
-import {useDispatch, useSelector} from 'react-redux';
-import {
-  addNewItem,
-  setHeaderTrue,
-  setBody,
-} from '../store/reducers/headerSlice';
-
-import htmlToElement from '../utilities/htmlToElement/htmlToElement';
-import Header from '../components/header';
 import htmlparser from 'htmlparser2-without-node-native';
-import MainView from './mainView';
-import entities from 'entities';
-
+import {useDispatch, useSelector} from 'react-redux';
+import {addNewItem} from '../store/reducers/headerSlice';
 const boldStyle = {fontWeight: 'bold'};
 const italicStyle = {fontStyle: 'italic'};
 const underlineStyle = {textDecorationLine: 'underline'};
 const strikethroughStyle = {textDecorationLine: 'line-through'};
 const codeStyle = {fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace'};
-
 const baseStyles = StyleSheet.create({
   b: boldStyle,
   strong: boldStyle,
@@ -49,40 +38,6 @@ const baseStyles = StyleSheet.create({
   h5: {fontWeight: 'bold', fontSize: 14},
   h6: {fontWeight: 'bold', fontSize: 12},
 });
-
-const Img = props => {
-  const width =
-    parseInt(props.attribs['width'], 10) ||
-    parseInt(props.attribs['data-width'], 10) ||
-    0;
-  const height =
-    parseInt(props.attribs['height'], 10) ||
-    parseInt(props.attribs['data-height'], 10) ||
-    0;
-
-  const imgStyle = {
-    width,
-    height,
-  };
-
-  const source = {
-    uri: props.attribs.src,
-    width,
-    height,
-  };
-  return <AutoSizedImage source={source} style={imgStyle} />;
-};
-
-const defaultOpts = {
-  lineBreak: '\n',
-  paragraphBreak: '\n\n',
-  bullet: '\u2022 ',
-  TextComponent: Text,
-  textComponentProps: null,
-  NodeComponent: Text,
-  nodeComponentProps: null,
-};
-
 const opts = {
   addLineBreaks: true,
   linkHandler: url => Linking.openURL(url),
@@ -92,85 +47,105 @@ const opts = {
   //customRenderer: renderNode,
   RootComponent: element => <View {...element} />,
 };
-
+const Img = props => {
+  const width =
+    parseInt(props.attribs['width'], 10) ||
+    parseInt(props.attribs['data-width'], 10) ||
+    0;
+  const height =
+    parseInt(props.attribs['height'], 10) ||
+    parseInt(props.attribs['data-height'], 10) ||
+    0;
+  const imgStyle = {
+    width,
+    height,
+  };
+  const source = {
+    uri: props.attribs.src,
+    width,
+    height,
+  };
+  return <AutoSizedImage source={source} style={imgStyle} />;
+};
 const BASE_URL = 'http://150.230.126.140:3000';
-
 const Home = () => {
   const [html, setHtml] = useState(<View></View>);
+  const [defaultPATH, setDefaultPath] = useState('/');
+  // Condition here
+  // useEffect(()=>{
+  //   if(props.route.params.link){
+  //     setDefaultPath(props.route.params.link)
+  //   }
+  // },[props.route.params.link])
   const aTags = useSelector(state => state.header.aTags);
-  const defaultPath = useSelector(state => state.header.defaultPath);
-  const body = useSelector(state => state.header.body);
-  const isHeader = useSelector(state => state.header.isHeader);
   const dispatch = useDispatch();
-
-  const getHTML = async () => {
-    await axios
-      .get(BASE_URL + defaultPath)
-      .then(function (response) {
-        var root = response.data;
-        root = root.split('<body>')[1];
-        root = root.split('<script>')[0];
-
-        //console.log('asd1');
-        // extractData(root, (err, res) => {
-        //   if (err) {
-        //     console.log(err);
-        //   } else {
-        //     console.log(res);
-        //   }
-        // });
-        console.log(root);
-        htmlToElement(root, opts, (err, element) => {
-          if (err) {
-            console.log(err);
-          }
-          //element = element[0];
-          console.log(element);
-          setHtml(element);
-        });
-      })
-      .catch(function (error) {
-        //console.log(error);
-        //alert(error);
-      });
+  //const [nodeType, setNodeType] = useState(Text);
+  const defaultOpts = {
+    lineBreak: '\n',
+    paragraphBreak: '\n\n',
+    bullet: '\u2022 ',
+    TextComponent: Text,
+    textComponentProps: null,
+    NodeComponent: Text,
+    nodeComponentProps: null,
   };
-
   useEffect(() => {
+    const getHTML = async () => {
+      const users = await axios
+        .get(BASE_URL + defaultPATH)
+        .then(function (response) {
+          //console.log(response);
+          var root = response.data;
+          root = root.split('<body>')[1];
+          root = root.split('<script>')[0];
+          //root = root.split('<div class="navbar-fixed">')[1];
+          //root = root.split('<div class="container"><div><div class="row">')[0];
+          htmlToElement(root, opts, (err, element) => {
+            if (err) {
+              console.log(err);
+            }
+            setHtml(element);
+          });
+          //console.log(root);
+        })
+        .catch(function (error) {
+          alert(error.message);
+        });
+    };
     getHTML();
-  }, []);
-
+  }, [defaultPATH]);
   const htmlToElement = (rawHtml, customOpts = {}, done) => {
     const opts = {
       ...defaultOpts,
       ...customOpts,
     };
-
     function inheritedStyle(parent) {
       if (!parent) return null;
       const style = StyleSheet.flatten(opts.styles[parent.name]) || {};
       const parentStyle = inheritedStyle(parent.parent) || {};
       return {...parentStyle, ...style};
     }
-
     function domToElement(dom, parent) {
       if (!dom) return null;
-
       const renderNode = opts.customRenderer;
       let orderedListCounter = 1;
-
       return dom.map((node, index, list) => {
         if (renderNode) {
           const rendered = renderNode(node, index, list, parent, domToElement);
           if (rendered || rendered === null) return rendered;
         }
         const {TextComponent} = opts;
-
+        if (
+          node.attribs !== undefined &&
+          node.attribs.class === 'nav-wrapper'
+        ) {
+          ExtractATags(node);
+        }
         if (node.type === 'text') {
           // const defaultStyle = opts.textComponentProps
           //   ? opts.textComponentProps.style
           //   : null;
           // const customStyle = inheritedStyle(parent);
-
           return (
             <TextComponent
               //{...opts.textComponentProps}
@@ -182,27 +157,19 @@ const Home = () => {
             </TextComponent>
           );
         }
-
         if (node.type === 'tag') {
           if (node.name === 'img') {
             return <Img key={index} attribs={node.attribs} />;
           }
           let linkPressHandler = null;
-          let linkLongPressHandler = null;
-
           if (node.name === 'a' && node.attribs && node.attribs.href) {
-            linkPressHandler = () =>
-              opts.linkHandler(
-                'http://150.230.126.140:3000' + node.attribs.href,
-              );
-            if (opts.linkLongPressHandler) {
-              linkLongPressHandler = () =>
-                opts.linkLongPressHandler(
-                  entities.decodeHTML(node.attribs.href),
-                );
-            }
+            //setNodeType(Text);
+            linkPressHandler = () => {
+              //console.log(node.attribs.href);
+              setDefaultPath(node.attribs.href);
+              //console.log(defaultPATH);
+            };
           }
-
           let linebreakBefore = null;
           let linebreakAfter = null;
           if (opts.addLineBreaks) {
@@ -211,6 +178,7 @@ const Home = () => {
                 linebreakBefore = opts.lineBreak;
                 break;
               case 'p':
+                //setNodeType(Text);
                 if (index < list.length - 1) {
                   linebreakAfter = opts.paragraphBreak;
                 }
@@ -221,18 +189,23 @@ const Home = () => {
               case 'h3':
               case 'h4':
               case 'h5':
+                //setNodeType(Text);
                 linebreakAfter = opts.lineBreak;
                 break;
             }
           }
-
           let listItemPrefix = null;
+          if (node.name === 'ol') {
+            //setNodeType(View);
+          }
+          if (node.name === 'ul') {
+            //setNodeType(View);
+          }
           if (node.name === 'li') {
             const defaultStyle = opts.textComponentProps
               ? opts.textComponentProps.style
               : null;
             const customStyle = inheritedStyle(parent);
-
             if (!parent) {
               listItemPrefix = null;
             } else if (parent.name === 'ol') {
@@ -252,9 +225,7 @@ const Home = () => {
               linebreakAfter = opts.lineBreak;
             }
           }
-
           const {NodeComponent, styles} = opts;
-
           return (
             <NodeComponent
               {...opts.nodeComponentProps}
@@ -272,115 +243,39 @@ const Home = () => {
         }
       });
     }
-
     const handler = new htmlparser.DomHandler(function (err, dom) {
       if (err) done(err);
       done(null, domToElement(dom));
     });
-
     const parser = new htmlparser.Parser(handler);
     parser.write(rawHtml);
     parser.done();
   };
-
-  console.log(aTags);
-  let titleName;
-  if (aTags.length > 0) {
-    for (const key in aTags) {
-      if (aTags[key].link === defaultPath) {
-        titleName = aTags[key].name;
+  const ExtractATags = node => {
+    if (node.children)
+      for (const child in node.children) {
+        ExtractATags(node.children[child]);
+      }
+    if (node.type === 'tag') {
+      if (node.name === 'a' && node.attribs && node.attribs.href) {
+        let tag = {
+          name: node.children[0].data,
+          link: node.attribs.href,
+        };
+        dispatch(addNewItem(tag));
       }
     }
-  }
+  };
+  console.log(aTags);
+  const header = useSelector((state) => state.header.aTags)
+  
 
-  //console.log(aTags);
   return (
-    <ScrollView style={{flex: 1}}>
-      <View>{}</View>
+    <ScrollView>
+      {/* <Text>Link: {JSON.stringify(props.route.params.link)}</Text> */}
+      {/* <Text>{JSON.stringify(header)}</Text> */}
+      <View>{html}</View>
     </ScrollView>
   );
 };
-
 export default Home;
-
-const extractData = (rawHtml, done) => {
-  function domToElement(dom) {
-    if (!dom) return null;
-    dom.map(node => {
-      if (node.attribs !== undefined && node.attribs.class === 'nav-wrapper') {
-        ExtractATags(node);
-      }
-
-      if (node.name === 'nav') {
-        dispatch(setHeaderTrue());
-      }
-
-      if (
-        node.attribs !== undefined &&
-        node.attribs.class === 'container' &&
-        node.parent !== undefined &&
-        node.parent.name === 'div' &&
-        node.parent.attribs.class === undefined
-      ) {
-        //console.log(node);
-        dispatch(setBody(node));
-      }
-
-      domToElement(node.children, node);
-    });
-  }
-
-  const handler = new htmlparser.DomHandler(function (err, dom) {
-    if (err) done(err);
-    done(null, domToElement(dom));
-  });
-
-  const parser = new htmlparser.Parser(handler);
-  parser.write(rawHtml);
-  parser.done();
-};
-
-// const ExtractATags = node => {
-// 	if (node.children)
-// 		for (const child in node.children) {
-// 			ExtractATags(node.children[child]);
-// 		}
-
-// 	if (node.type === 'tag') {
-// 		if (node.name === 'a' && node.attribs && node.attribs.href) {
-// 			if (
-// 				aTags.some(value => {
-// 					value.link === node.attribs.href;
-// 				})
-// 			) {
-// 				let tag = {
-// 					name: node.children[0].data,
-// 					link: node.attribs.href,
-// 				};
-// 				dispatch(addNewItem(tag));
-// 			}
-
-// if (aTags.filter(item => item.link == node.attribs.href).length == 0) {
-//   console.log(node.attribs.href);
-//   let tag = {
-//     name: node.children[0].data,
-//     link: node.attribs.href,
-//   };
-//   dispatch(addNewItem(tag));
-// }
-
-// if (
-//   aTags.some(value => {
-//     value.link === node.attribs.href;
-//   })
-// ) {
-//   //console.log(obj.link);
-//   let tag = {
-//     name: node.children[0].data,
-//     link: node.attribs.href,
-//   };
-//   dispatch(addNewItem(tag));
-// }
-// 		}
-// 	}
-// };

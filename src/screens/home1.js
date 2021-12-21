@@ -9,6 +9,9 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import htmlparser from 'htmlparser2-without-node-native';
+import {useDispatch, useSelector} from 'react-redux';
+import {addNewItem, setBody} from '../store/reducers/headerSlice';
+//import Body from './body';
 
 const boldStyle = {fontWeight: 'bold'};
 const italicStyle = {fontStyle: 'italic'};
@@ -76,6 +79,7 @@ const BASE_URL = 'http://150.230.126.140:3000';
 const Home = () => {
   const [html, setHtml] = useState(<View></View>);
   const [defaultPATH, setDefaultPath] = useState('/');
+  const dispatch = useDispatch();
   //const [nodeType, setNodeType] = useState(Text);
 
   const defaultOpts = {
@@ -93,18 +97,18 @@ const Home = () => {
       const users = await axios
         .get(BASE_URL + defaultPATH)
         .then(function (response) {
-          console.log(response);
+          //console.log(response);
           var root = response.data;
           root = root.split('<body>')[1];
           root = root.split('<script>')[0];
-          //root = root.split('<div class="navbar-fixed">')[1];
-          //root = root.split('<div class="container"><div><div class="row">')[0];
 
-          root = htmlToElement(root, opts, (err, element) => {
+          htmlToElement(root, opts, (err, element) => {
             if (err) {
               console.log(err);
             }
-            setHtml(element);
+            let bod = element;
+            setHtml(bod);
+            dispatch(setBody(bod));
           });
           //console.log(root);
         })
@@ -141,6 +145,14 @@ const Home = () => {
           if (rendered || rendered === null) return rendered;
         }
         const {TextComponent} = opts;
+
+        if (
+          node.attribs !== undefined &&
+          node.attribs.class === 'nav-wrapper'
+        ) {
+          ExtractATags(node);
+          //return;
+        }
 
         if (node.type === 'text') {
           // const defaultStyle = opts.textComponentProps
@@ -263,8 +275,24 @@ const Home = () => {
     parser.done();
   };
 
-  //console.log(html);
-  //return <View>{data}</View>;
+  const ExtractATags = node => {
+    if (node.children)
+      for (const child in node.children) {
+        ExtractATags(node.children[child]);
+      }
+
+    if (node.type === 'tag') {
+      if (node.name === 'a' && node.attribs && node.attribs.href) {
+        let tag = {
+          name: node.children[0].data,
+          link: node.attribs.href,
+        };
+        dispatch(addNewItem(tag));
+      }
+    }
+  };
+
+  //console.log(body);
   return (
     <ScrollView>
       <View>{html}</View>

@@ -119,6 +119,7 @@ const Home = () => {
         //     console.log(res);
         //   }
         // });
+
         console.log(root);
         htmlToElement(root, opts, (err, element) => {
           if (err) {
@@ -283,15 +284,37 @@ const Home = () => {
     parser.done();
   };
 
-  console.log(aTags);
-  let titleName;
-  if (aTags.length > 0) {
-    for (const key in aTags) {
-      if (aTags[key].link === defaultPath) {
-        titleName = aTags[key].name;
+  const ExtractATags = node => {
+    if (node.children)
+      for (const child in node.children) {
+        ExtractATags(node.children[child]);
+      }
+
+    if (node.type === 'tag') {
+      if (node.name === 'a' && node.attribs && node.attribs.href) {
+        if (
+          aTags.some(value => {
+            value.link === node.attribs.href;
+          })
+        ) {
+          let tag = {
+            name: node.children[0].data,
+            link: node.attribs.href,
+          };
+          dispatch(addNewItem(tag));
+        }
       }
     }
-  }
+  };
+
+  // if (aTags.filter(item => item.link == node.attribs.href).length == 0) {
+  //   console.log(node.attribs.href);
+  //   let tag = {
+  //     name: node.children[0].data,
+  //     link: node.attribs.href,
+  //   };
+  //   dispatch(addNewItem(tag));
+  // }
 
   //console.log(aTags);
   return (
@@ -303,42 +326,42 @@ const Home = () => {
 
 export default Home;
 
-const extractData = (rawHtml, done) => {
-  function domToElement(dom) {
-    if (!dom) return null;
-    dom.map(node => {
-      if (node.attribs !== undefined && node.attribs.class === 'nav-wrapper') {
-        ExtractATags(node);
-      }
+// const extractData = (rawHtml, done) => {
+//   function domToElement(dom) {
+//     if (!dom) return null;
+//     dom.map(node => {
+//       if (node.attribs !== undefined && node.attribs.class === 'nav-wrapper') {
+//         ExtractATags(node);
+//       }
 
-      if (node.name === 'nav') {
-        dispatch(setHeaderTrue());
-      }
+//       if (node.name === 'nav') {
+//         dispatch(setHeaderTrue());
+//       }
 
-      if (
-        node.attribs !== undefined &&
-        node.attribs.class === 'container' &&
-        node.parent !== undefined &&
-        node.parent.name === 'div' &&
-        node.parent.attribs.class === undefined
-      ) {
-        //console.log(node);
-        dispatch(setBody(node));
-      }
+//       if (
+//         node.attribs !== undefined &&
+//         node.attribs.class === 'container' &&
+//         node.parent !== undefined &&
+//         node.parent.name === 'div' &&
+//         node.parent.attribs.class === undefined
+//       ) {
+//         //console.log(node);
+//         dispatch(setBody(node));
+//       }
 
-      domToElement(node.children, node);
-    });
-  }
+//       domToElement(node.children, node);
+//     });
+//   }
 
-  const handler = new htmlparser.DomHandler(function (err, dom) {
-    if (err) done(err);
-    done(null, domToElement(dom));
-  });
+//   const handler = new htmlparser.DomHandler(function (err, dom) {
+//     if (err) done(err);
+//     done(null, domToElement(dom));
+//   });
 
-  const parser = new htmlparser.Parser(handler);
-  parser.write(rawHtml);
-  parser.done();
-};
+//   const parser = new htmlparser.Parser(handler);
+//   parser.write(rawHtml);
+//   parser.done();
+// };
 
 // const ExtractATags = node => {
 // 	if (node.children)

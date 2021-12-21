@@ -1,10 +1,12 @@
+import React from 'react';
 import {createSlice} from '@reduxjs/toolkit';
+import {View} from 'react-native';
 
 const initialState = {
   aTags: [],
   isHeader: false,
   defaultPath: '/',
-  // body,
+  body: <View></View>,
 };
 
 export const headerSlice = createSlice({
@@ -12,13 +14,22 @@ export const headerSlice = createSlice({
   initialState,
   reducers: {
     addNewItem: (state, action) => {
-      state.aTags.push(action.payload);
+      let isExist = false;
+      state.aTags.forEach(element => {
+        if (element.link === action.payload.link) {
+          isExist = true;
+        }
+      });
+      if (!isExist) {
+        state.aTags.push(action.payload);
+      }
+      //state.aTags.push(action.payload);
     },
     setHeaderTrue: (state, action) => {
       state.isHeader = true;
     },
-    setHeaderFalse: (state, action) => {
-      state.isHeader = false;
+    setBody: (state, action) => {
+      state.body = action.payload;
     },
     setDefaultPath: (state, action) => {
       state.defaultPath = action.payload;
@@ -27,6 +38,6 @@ export const headerSlice = createSlice({
 });
 
 // Action creators are generated for each case reducer function
-export const {addNewItem, setHeaderFalse, setHeaderTrue} = headerSlice.actions;
+export const {addNewItem, setBody, setHeaderTrue} = headerSlice.actions;
 
 export default headerSlice.reducer;

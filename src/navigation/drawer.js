@@ -49,11 +49,12 @@ export default function App() {
   const header = useSelector((state) => state.header.aTags)
   var uniqueHeader = removeDuplicates(header, "name");
   return (
+     
+    //  uniqueHeader.map((item,index) => <Drawer.Screen key={index} name={item.name} component={Home} />)
     <NavigationContainer>
       <Drawer.Navigator initialRouteName="Home">
         {
-          uniqueHeader.map((item,index) => <Drawer.Screen key={index} name={item.name} component={Home} />)
-          // uniqueHeader.map((item,index) => <Drawer.Screen key={index} name={item.name} component={Home} initialParams={{ link: item.link }}/>)
+         uniqueHeader.map((item,index) => <Drawer.Screen key={index} name={item.name} component={Home} initialParams={{ link: item.link }}/>)
         }
         {/* <Drawer.Screen name="Home" component={HomeScreen}/>
         <Drawer.Screen name="Notifications" component={NotificationsScreen} /> */}

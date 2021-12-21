@@ -68,15 +68,15 @@ const Img = props => {
   return <AutoSizedImage source={source} style={imgStyle} />;
 };
 const BASE_URL = 'http://150.230.126.140:3000';
-const Home = () => {
+const Home = (props) => {
   const [html, setHtml] = useState(<View></View>);
   const [defaultPATH, setDefaultPath] = useState('/');
   // Condition here
-  // useEffect(()=>{
-  //   if(props.route.params.link){
-  //     setDefaultPath(props.route.params.link)
-  //   }
-  // },[props.route.params.link])
+  useEffect(()=>{
+    if(props.route.params.link){
+      setDefaultPath(props.route.params.link)
+    }
+  },[props.route.params.link])
   const aTags = useSelector(state => state.header.aTags);
   const dispatch = useDispatch();
   //const [nodeType, setNodeType] = useState(Text);
